@@ -1,29 +1,116 @@
 @page "/rules"
+@using System.Text.Json
+@inject IHostEnvironment Env
 
-<PageTitle>Rules</PageTitle>
+<PageTitle>Rule set</PageTitle>
 
-<h1>Rule set</h1>
-<p>
-    The dashboard joins maintenance records, scores each machine with <strong>AI RulesEngine</strong> (weighted rules defined by Users),
-    blends classifier trained on that joined data, and narrates the results.
-</p>
+<header class="rules-header">
+    <div class="rules-badge">🧮 Explainable AI</div>
+    <h1 class="rules-title">How the risk score is built</h1>
+    <p class="rules-lead">
+        Every score on the dashboard is fully explainable. A transparent, user-editable
+        <strong>rules engine</strong> evaluates weighted conditions against each machine's
+        maintenance history, and its score is blended with a machine-learning failure
+        probability trained on that same joined data.
+    </p>
 
-<ul>
-    <li>Maintenance overdue past (and past double) the scheduled interval increases the risk score.</li>
-    <li>Frequent and recurring breakdown tickets raise the urgency.</li>
-    <li>High and moderate average downtime hours add weight.</li>
-    <li>Repeated high-downtime parts signal potential supply chain or reliability issues.</li>
-    <li>The model converts these joined features into a probability, blended 55% rules / 45% ML into the overall score.</li>
-</ul>
-
-<div class="card shadow-sm mt-4">
-    <div class="card-body">
-        <h5 class="card-title">Severity guidance</h5>
-        <ul>
-            <li><strong>Critical</strong> - immediate inspection and spare parts review.</li>
-            <li><strong>High</strong> - schedule maintenance within one week.</li>
-            <li><strong>Medium</strong> - monitor and plan service soon.</li>
-            <li><strong>Low</strong> - continue routine checks.</li>
-        </ul>
+    <div class="blend-bar" role="img" aria-label="Score blend: 55% rules engine, 45% machine learning">
+        <div class="blend-seg blend-seg--rules" style="width:55%">
+            <span>⚖️ Rules engine &mdash; 55%</span>
+        </div>
+        <div class="blend-seg blend-seg--ml" style="width:45%">
+            <span>🤖 ML model &mdash; 45%</span>
+        </div>
     </div>
+</header>
+
+<section class="section">
+    <h2 class="section-title">Weighted rules</h2>
+    <p class="section-sub">Every rule that matches a machine adds its weight to the rule score (capped at 100) and surfaces as a risk factor. Thresholds live in <code>Rules/machine-risk-rules.json</code>, so they can be tuned without a code change.</p>
+
+    <div class="row g-3">
+        @foreach (var rule in rules)
+        {
+            <div class="col-md-6">
+                <div class="rule-card">
+                    <div class="rule-card-top">
+                        <span class="rule-label">@rule.Label</span>
+                        <span class="rule-weight">+@rule.Weight</span>
+                    </div>
+                    <div class="rule-bar">
+                        <div class="rule-bar-fill" style="width:@(rule.Weight)%"></div>
+                    </div>
+                    <code class="rule-expr">@rule.Expression</code>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+<section class="section">
+    <h2 class="section-title">Severity guidance</h2>
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <div class="sev-card sev-card--critical">
+                <span class="sev-icon">🚨</span>
+                <span class="sev-name">Critical</span>
+                <span class="sev-range">80&ndash;100</span>
+                <p>Immediate inspection and spare parts review.</p>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="sev-card sev-card--high">
+                <span class="sev-icon">⚠️</span>
+                <span class="sev-name">High</span>
+                <span class="sev-range">60&ndash;79</span>
+                <p>Schedule maintenance within one week.</p>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="sev-card sev-card--medium">
+                <span class="sev-icon">📊</span>
+                <span class="sev-name">Medium</span>
+                <span class="sev-range">35&ndash;59</span>
+                <p>Monitor and plan service soon.</p>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="sev-card sev-card--low">
+                <span class="sev-icon">✅</span>
+                <span class="sev-name">Low</span>
+                <span class="sev-range">0&ndash;34</span>
+                <p>Continue routine checks.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="cta-footer">
+    <a class="btn btn-primary btn-lg" href="dashboard">See it scored live &rarr;</a>
 </div>
+
+@code {
+    private List<RuleDisplay> rules = [];
+
+    private sealed class RuleDisplay
+    {
+        public string Label { get; set; } = string.Empty;
+        public double Weight { get; set; }
+        public string Expression { get; set; } = string.Empty;
+    }
+
+    private sealed class ScoringWorkflow
+    {
+        public List<RuleDisplay> Rules { get; set; } = [];
+    }
+
+    protected override void OnInitialized()
+    {
+        var path = Path.Combine(Env.ContentRootPath, "Rules", "machine-risk-rules.json");
+        var workflow = JsonSerializer.Deserialize<ScoringWorkflow>(
+            File.ReadAllText(path),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        rules = workflow?.Rules ?? [];
+    }
+}
