@@ -41,7 +41,7 @@ public sealed class DataRepository
 
     public DataRepository(IHostEnvironment env)
     {
-        var dataDir = Path.Combine(env.ContentRootPath, "..", "mockData");
+        var dataDir = Path.Combine(env.ContentRootPath, "mockData");
         _machinePath = Path.Combine(dataDir, "Machine.json");
         _maintenancePath = Path.Combine(dataDir, "MaintRecord.json");
         _partsPath = Path.Combine(dataDir, "Parts.json");
