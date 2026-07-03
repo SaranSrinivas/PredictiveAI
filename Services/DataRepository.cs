@@ -41,7 +41,42 @@ public sealed class DataRepository
 
     public DataRepository(IHostEnvironment env)
     {
-        var dataDir = Path.Combine(env.ContentRootPath, "mockData");
+        // Prefer mockData under the content root, but also search upward from the runtime base
+        // directory so the code works when running from bin/Debug or when the content root
+        // is different in tests or the host.
+        string? dataDir = Path.Combine(env.ContentRootPath, "mockData");
+
+        if (!Directory.Exists(dataDir))
+        {
+            // Walk upwards from AppContext.BaseDirectory looking for a mockData folder.
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null)
+            {
+                var candidate = Path.Combine(dir.FullName, "mockData");
+                if (Directory.Exists(candidate))
+                {
+                    dataDir = candidate;
+                    break;
+                }
+                dir = dir.Parent;
+            }
+        }
+
+        if (!Directory.Exists(dataDir))
+        {
+            // Last-resort: check one level above the content root (legacy layout).
+            var candidate = Path.GetFullPath(Path.Combine(env.ContentRootPath, "..", "mockData"));
+            if (Directory.Exists(candidate))
+            {
+                dataDir = candidate;
+            }
+        }
+
+        if (!Directory.Exists(dataDir))
+        {
+            throw new DirectoryNotFoundException($"Could not locate 'mockData' folder. Searched around '{env.ContentRootPath}' and '{AppContext.BaseDirectory}'.");
+        }
+
         _machinePath = Path.Combine(dataDir, "Machine.json");
         _maintenancePath = Path.Combine(dataDir, "MaintRecord.json");
         _partsPath = Path.Combine(dataDir, "Parts.json");
