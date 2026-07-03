@@ -46,9 +46,9 @@ public sealed class PredictiveAnalysisService
         // Train the ML.NET model once on the joined per-machine data.
         _modelTrainer.EnsureTrained(() => featureSets);
 
-        var items = new List<MachineRiskItem>();
-
-        foreach (var features in featureSets)
+        // Each machine's rule evaluation is independent, so score them concurrently instead of
+        // paying for N sequential round trips through the rules engine.
+        var scoringTasks = featureSets.Select(async features =>
         {
             var input = new MachineRiskInput
             {
@@ -65,7 +65,7 @@ public sealed class PredictiveAnalysisService
             var overallRisk = Math.Round(
                 Math.Min(100, ruleEvaluation.RuleScore * RuleWeight + prediction.Probability * 100 * MlWeight), 2);
 
-            items.Add(new MachineRiskItem
+            return new MachineRiskItem
             {
                 Code = features.Machine.Code,
                 MachineName = features.Machine.MachineName,
@@ -82,9 +82,10 @@ public sealed class PredictiveAnalysisService
                 Severity = DetermineSeverity(overallRisk),
                 TopProblem = features.TopProblem,
                 RiskFactors = ruleEvaluation.RiskFactors
-            });
-        }
+            };
+        });
 
+        var items = await Task.WhenAll(scoringTasks);
         var ordered = items.OrderByDescending(i => i.OverallRiskScore).ToList();
 
         // Template narratives so the page is fully usable before the LLM runs.

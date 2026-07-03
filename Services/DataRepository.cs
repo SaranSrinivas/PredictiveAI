@@ -81,15 +81,29 @@ public sealed class DataRepository
         _maintenancePath = Path.Combine(dataDir, "MaintRecord.json");
         _partsPath = Path.Combine(dataDir, "Parts.json");
         _ticketPath = Path.Combine(dataDir, "Ticket.json");
+
+        _machines = new Lazy<List<Machine>>(() => Load<Machine>(_machinePath));
+        _maintRecords = new Lazy<List<MaintRecord>>(() => Load<MaintRecord>(_maintenancePath));
+        _parts = new Lazy<List<Part>>(() => Load<Part>(_partsPath));
+        _tickets = new Lazy<List<Ticket>>(() => Load<Ticket>(_ticketPath));
     }
 
-    public List<Machine> LoadMachines() => Load<Machine>(_machinePath);
+    // The mock JSON files never change while the app is running, so cache the parsed entities
+    // (this instance is a singleton) to avoid re-reading and re-deserializing them on every
+    // dashboard load. Derived data (feature sets, "days since" calculations) is still recomputed
+    // fresh each call since it depends on the current date.
+    private readonly Lazy<List<Machine>> _machines;
+    private readonly Lazy<List<MaintRecord>> _maintRecords;
+    private readonly Lazy<List<Part>> _parts;
+    private readonly Lazy<List<Ticket>> _tickets;
 
-    public List<MaintRecord> LoadMaintRecords() => Load<MaintRecord>(_maintenancePath);
+    public List<Machine> LoadMachines() => _machines.Value;
 
-    public List<Part> LoadParts() => Load<Part>(_partsPath);
+    public List<MaintRecord> LoadMaintRecords() => _maintRecords.Value;
 
-    public List<Ticket> LoadTickets() => Load<Ticket>(_ticketPath);
+    public List<Part> LoadParts() => _parts.Value;
+
+    public List<Ticket> LoadTickets() => _tickets.Value;
 
     /// <summary>
     /// Inner-joins maintenance records to tickets on TicketNo, attaching each maintenance

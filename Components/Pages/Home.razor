@@ -18,11 +18,18 @@
 {
     <div class="dash-loading">
         <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
-        <span>Loading analysis&hellip;</span>
+        <span>Joining maintenance records and scoring machines with the rules engine and ML model&hellip;</span>
     </div>
 }
 else
 {
+    @if (isEnriching)
+    {
+        <div class="dash-loading dash-loading--inline">
+            <div class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></div>
+            <span>Generating AI-written recommendations and fleet summary&hellip; the rest of the dashboard is ready below.</span>
+        </div>
+    }
     @if (!string.IsNullOrWhiteSpace(summary.FleetSummary))
     {
         <div class="fleet-summary" role="alert">
@@ -118,6 +125,7 @@ else
 
 @code {
     private DashboardSummary? summary;
+    private bool isEnriching;
     private readonly CancellationTokenSource cts = new();
 
     protected override async Task OnInitializedAsync()
@@ -132,6 +140,8 @@ else
         // page never blocks on the (slow) local LLM during the initial render.
         if (firstRender && summary is not null && Service.LlmNarrativesEnabled)
         {
+            isEnriching = true;
+            StateHasChanged();
             try
             {
                 await Service.EnrichNarrativesAsync(summary, () => InvokeAsync(StateHasChanged), cts.Token);
@@ -139,6 +149,11 @@ else
             catch (OperationCanceledException)
             {
                 // Page navigated away; ignore.
+            }
+            finally
+            {
+                isEnriching = false;
+                StateHasChanged();
             }
         }
     }

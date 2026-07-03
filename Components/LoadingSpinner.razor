@@ -1,0 +1,15 @@
+@* Components/LoadingSpinner.razor *@
+@if (Visible)
+{
+    <div class="spinner-overlay" role="status" aria-live="polite" aria-label="Loading">
+        <div class="spinner-box">
+            <div class="spinner" />
+            <div class="spinner-text">@Message</div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string Message { get; set; } = "AI is working...";
+}

@@ -17,6 +17,7 @@ public sealed class MachineRiskItem
     public int TicketCount { get; init; }
     public double AvgDowntimeHours { get; init; }
     public int HighDowntimePartsCount { get; init; }
+    public double OverallScore { get; set; }
     public double RuleScore { get; init; }
     public double MlRiskProbability { get; init; }
     public double OverallRiskScore { get; init; }

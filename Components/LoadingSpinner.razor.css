@@ -1,0 +1,43 @@
+/* Components/LoadingSpinner.razor.css */
+.spinner-overlay {
+  position: fixed;
+  inset: 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(0,0,0,0.45);
+  z-index: 10000;
+}
+
+.spinner-box {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+  padding:20px 28px;
+  border-radius:10px;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+  min-width:220px;
+}
+
+/* Simple circular spinner */
+.spinner {
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  border:6px solid #e6e6e6;
+  border-top-color:#2563eb; /* accent color */
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner-text {
+  font-weight:600;
+  color:#111827;
+  font-size:0.95rem;
+  text-align:center;
+}
