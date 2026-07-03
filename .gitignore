@@ -1,0 +1,24 @@
+## .NET / Visual Studio
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ll]og/
+[Ll]ogs/
+
+## Rider / VS Code
+.idea/
+*.swp
+
+## OS files
+.DS_Store
+Thumbs.db

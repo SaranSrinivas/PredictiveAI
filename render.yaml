@@ -1,0 +1,15 @@
+# Optional Render blueprint. You can push this and then connect the repo in Render.
+# If Render already created a service for you, you can omit this file.
+
+services:
+  - type: web
+    name: PredictiveAnalysis
+    env: docker
+    dockerfilePath: Dockerfile
+    branch: main
+    region: oregon
+    plan: free
+
+# Note: render.yaml is optional. You can also create the Web Service in the Render dashboard and
+# point it at this repository. The service should be configured to use Docker (env: docker).
+# Render will set a PORT env var automatically; the Dockerfile uses that to bind the app.

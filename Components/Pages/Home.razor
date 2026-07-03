@@ -1,0 +1,151 @@
+﻿@page "/dashboard"
+@rendermode InteractiveServer
+@using PredictiveAnalysis.Models
+@using PredictiveAnalysis.Services
+@inject PredictiveAnalysisService Service
+@implements IDisposable
+
+<PageTitle>Predictive Maintenance Dashboard</PageTitle>
+
+<header class="dash-header">
+    <div class="dash-badge">⚙️ Predictive Maintenance</div>
+    <h1 class="dash-title">Rules-based predictive analysis using Artificial Intelligence</h1>
+    <p class="dash-lead">This dashboard joins maintenance records and scores each machine with an
+        explainable AI rules engine &mdash; blended with a machine-learning failure probability.</p>
+</header>
+
+@if (summary is null)
+{
+    <div class="dash-loading">
+        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+        <span>Loading analysis&hellip;</span>
+    </div>
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(summary.FleetSummary))
+    {
+        <div class="fleet-summary" role="alert">
+            <span class="fleet-icon">🧠</span>
+            <div>
+                <span class="fleet-label">Fleet summary</span>
+                <div class="fleet-text">@summary.FleetSummary</div>
+            </div>
+        </div>
+    }
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card--total">
+                <span class="stat-icon">🏭</span>
+                <span class="stat-label">Total machines</span>
+                <span class="stat-value">@summary.TotalMachines</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card--critical">
+                <span class="stat-icon">🚨</span>
+                <span class="stat-label">Critical</span>
+                <span class="stat-value text-danger">@summary.CriticalMachines</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card--high">
+                <span class="stat-icon">⚠️</span>
+                <span class="stat-label">High risk</span>
+                <span class="stat-value text-warning">@summary.HighRiskMachines</span>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card--avg">
+                <span class="stat-icon">📊</span>
+                <span class="stat-label">Average risk</span>
+                <span class="stat-value">@summary.AvgRiskScore.ToString("0.00")</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-scroll">
+        <table class="table table-hover table-sm align-middle risk-grid mb-0">
+            <thead>
+                <tr>
+                    <th class="col-machine">Machine</th>
+                    <th class="col-cost">Cost center</th>
+                    <th class="col-date">Last maint.</th>
+                    <th class="num">Days</th>
+                    <th class="num">Tickets</th>
+                    <th class="col-problem">Top problem</th>
+                    <th class="col-downtime">Downtime (h)</th>
+                    <th class="col-factors">Risk factors</th>
+                    <th>Severity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var machine in summary.Machines)
+                {
+                    var sev = machine.Severity.ToLowerInvariant();
+                    <tr class="data-row">
+                        <td class="col-machine fw-semibold">@machine.MachineName</td>
+                        <td class="col-cost">@machine.CostCenter</td>
+                        <td class="col-date">@machine.LastMaintDate</td>
+                        <td class="num">@machine.DaysSinceLastMaintenance</td>
+                        <td class="num">@machine.TicketCount</td>
+                        <td class="col-problem">@machine.TopProblem</td>
+                        <td class="col-downtime num">@machine.AvgDowntimeHours.ToString("0.0")</td>
+                        <td class="col-factors">
+                            @foreach (var factor in machine.RiskFactors)
+                            {
+                                <span class="badge bg-light text-dark border me-1 mb-1">@factor</span>
+                            }
+                        </td>
+                        <td><span class="badge @(machine.Severity switch { "Critical" => "bg-danger", "High" => "bg-warning text-dark", "Medium" => "bg-info", _ => "bg-success"})">@machine.Severity</span></td>
+                    </tr>
+                    <tr class="reco-row">
+                        <td colspan="9">
+                            <div class="reco reco--@sev">
+                                <span class="reco-icon">💡</span>
+                                <p class="reco-text mb-0">
+                                    <span class="reco-label">Recommendation</span>
+                                    @machine.Recommendation
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private DashboardSummary? summary;
+    private readonly CancellationTokenSource cts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fast: join + RulesEngine + ML.NET + template narratives. Renders immediately.
+        summary = await Service.AnalyzeAsync(cts.Token);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // After the interactive circuit is live, stream in Semantic Kernel narratives so the
+        // page never blocks on the (slow) local LLM during the initial render.
+        if (firstRender && summary is not null && Service.LlmNarrativesEnabled)
+        {
+            try
+            {
+                await Service.EnrichNarrativesAsync(summary, () => InvokeAsync(StateHasChanged), cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Page navigated away; ignore.
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

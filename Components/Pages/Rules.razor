@@ -1,0 +1,29 @@
+@page "/rules"
+
+<PageTitle>Rules</PageTitle>
+
+<h1>Rule set</h1>
+<p>
+    The dashboard joins maintenance records, scores each machine with <strong>AI RulesEngine</strong> (weighted rules defined by Users),
+    blends classifier trained on that joined data, and narrates the results.
+</p>
+
+<ul>
+    <li>Maintenance overdue past (and past double) the scheduled interval increases the risk score.</li>
+    <li>Frequent and recurring breakdown tickets raise the urgency.</li>
+    <li>High and moderate average downtime hours add weight.</li>
+    <li>Repeated high-downtime parts signal potential supply chain or reliability issues.</li>
+    <li>The model converts these joined features into a probability, blended 55% rules / 45% ML into the overall score.</li>
+</ul>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h5 class="card-title">Severity guidance</h5>
+        <ul>
+            <li><strong>Critical</strong> - immediate inspection and spare parts review.</li>
+            <li><strong>High</strong> - schedule maintenance within one week.</li>
+            <li><strong>Medium</strong> - monitor and plan service soon.</li>
+            <li><strong>Low</strong> - continue routine checks.</li>
+        </ul>
+    </div>
+</div>

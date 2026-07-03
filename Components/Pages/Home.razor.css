@@ -1,0 +1,248 @@
+/* Page header */
+.dash-header {
+    padding: 1.6rem 1.75rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, rgb(5, 39, 103) 0%, #3a0647 100%);
+    color: #fff;
+    border-radius: 0.9rem;
+    box-shadow: 0 10px 30px rgba(5, 39, 103, 0.22);
+}
+
+.dash-badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.75rem;
+}
+
+.dash-title {
+    font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.dash-lead {
+    max-width: 760px;
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+/* Loading state */
+.dash-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2.5rem 0;
+    color: #6c757d;
+}
+
+/* Fleet summary callout */
+.fleet-summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(180deg, #fbfcfe 0%, #f1f5fb 100%);
+    border: 1px solid #e6ebf3;
+    border-left: 4px solid rgb(5, 39, 103);
+    border-radius: 0.6rem;
+}
+
+.fleet-icon {
+    font-size: 1.3rem;
+    line-height: 1.3;
+    flex-shrink: 0;
+}
+
+.fleet-label {
+    display: block;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7688;
+    margin-bottom: 0.15rem;
+}
+
+.fleet-text {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: #2f3640;
+}
+
+/* Stat cards */
+.stat-card {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.1rem;
+    background: #fff;
+    border: 1px solid #ebedf0;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
+}
+
+.stat-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: #adb5bd;
+}
+
+.stat-card--total::before { background: rgb(5, 39, 103); }
+.stat-card--critical::before { background: #dc3545; }
+.stat-card--high::before { background: #fd7e14; }
+.stat-card--avg::before { background: #6f42c1; }
+
+.stat-icon {
+    font-size: 1.35rem;
+    margin-bottom: 0.35rem;
+}
+
+.stat-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c757d;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #212529;
+}
+
+/* Grid fits any monitor: it scrolls inside its own box (vertically, and horizontally only
+   when the viewport is truly too narrow) while the sticky header stays in view. */
+.grid-scroll {
+    max-height: calc(100vh - 400px);
+    min-height: 240px;
+    overflow: auto;
+    border: 1px solid #e3e3e3;
+    border-radius: 0.5rem;
+}
+
+.risk-grid {
+    font-size: 0.8rem;
+    table-layout: fixed;
+    width: 100%;
+}
+
+.risk-grid thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f4f6f9;
+    border-bottom: 2px solid #d6d5d5;
+    /* Allow multi-word headers to wrap inside their column instead of overlapping neighbors. */
+    white-space: normal;
+    overflow-wrap: break-word;
+    vertical-align: bottom;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #495057;
+}
+
+.risk-grid td, .risk-grid th {
+    padding: 0.35rem 0.5rem;
+    vertical-align: middle;
+}
+
+/* Numeric columns: compact and right-aligned. */
+.risk-grid .num {
+    text-align: right;
+    white-space: nowrap;
+    width: 3.6rem;
+}
+
+/* Text columns: wrap and cap their width so the whole grid fits. */
+.risk-grid .col-machine { width: 9rem; word-break: break-word; }
+.risk-grid .col-cost { width: 12rem; word-break: break-word; color: #6c757d; }
+.risk-grid .col-date { width: 6rem; white-space: nowrap; color: #6c757d; }
+.risk-grid .col-problem { width: 9rem; word-break: break-word; }
+.risk-grid .col-downtime { width: 6.5rem; white-space: nowrap; }
+.risk-grid .col-factors { width: 16rem; }
+
+.risk-grid .badge { font-weight: 500; }
+
+/* Keep a machine's data row and its recommendation row visually grouped. */
+.risk-grid tbody .data-row > td {
+    border-bottom: 0;
+    padding-top: 0.5rem;
+}
+
+.risk-grid tbody .reco-row > td {
+    padding: 0 0.5rem 0.6rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.risk-grid tbody .data-row:hover > td,
+.risk-grid tbody .reco-row:hover > td {
+    background-color: #f8fafc;
+}
+
+/* The full-width recommendation paragraph. */
+.reco {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.55rem 0.8rem;
+    background: linear-gradient(180deg, #fbfcfe 0%, #f4f7fb 100%);
+    border: 1px solid #eef1f5;
+    border-left: 4px solid #adb5bd;
+    border-radius: 0.5rem;
+}
+
+.reco-icon {
+    font-size: 1rem;
+    line-height: 1.4;
+    flex-shrink: 0;
+}
+
+.reco-text {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: #2f3640;
+}
+
+.reco-label {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8a94a6;
+    margin-right: 0.5rem;
+    vertical-align: 1px;
+}
+
+/* Severity accent on the recommendation strip. */
+.reco--critical { border-left-color: #dc3545; background: linear-gradient(180deg, #fff6f7 0%, #fdeef0 100%); }
+.reco--high { border-left-color: #fd7e14; background: linear-gradient(180deg, #fff9f2 0%, #fdf1e5 100%); }
+.reco--medium { border-left-color: #0dcaf0; background: linear-gradient(180deg, #f4fcff 0%, #e9f8fd 100%); }
+.reco--low { border-left-color: #198754; background: linear-gradient(180deg, #f5fcf8 0%, #ecf8f1 100%); }
+
+/* Smaller screens: tighten spacing further so more fits before scrolling kicks in. */
+@media (max-width: 992px) {
+    .grid-scroll { max-height: calc(100vh - 300px); }
+    .risk-grid { font-size: 0.75rem; }
+    .risk-grid td, .risk-grid th { padding: 0.3rem 0.4rem; }
+}

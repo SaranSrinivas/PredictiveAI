@@ -1,0 +1,54 @@
+{
+  "workflowName": "MachineRiskScoring",
+  "description": "Weighted rules that score each machine's maintenance risk. Each rule that evaluates to true contributes its weight to the rule score and raises its label as a risk factor. Thresholds live here so they can be tuned without recompiling.",
+  "rules": [
+    {
+      "name": "MaintenanceOverdue",
+      "label": "Maintenance past scheduled interval",
+      "weight": 20,
+      "expression": "machine.DaysSinceLastMaintenance > machine.MaintenanceIntervalDays"
+    },
+    {
+      "name": "SeverelyOverdue",
+      "label": "More than double the maintenance interval overdue",
+      "weight": 20,
+      "expression": "machine.DaysSinceLastMaintenance > machine.MaintenanceIntervalDays * 2"
+    },
+    {
+      "name": "FrequentTickets",
+      "label": "Frequent breakdown tickets (5+)",
+      "weight": 20,
+      "expression": "machine.TicketCount >= 5"
+    },
+    {
+      "name": "RecurringTickets",
+      "label": "Recurring breakdown tickets (3+)",
+      "weight": 10,
+      "expression": "machine.TicketCount >= 3 && machine.TicketCount < 5"
+    },
+    {
+      "name": "HighAverageDowntime",
+      "label": "High average downtime (60h+)",
+      "weight": 20,
+      "expression": "machine.AvgDowntimeHours >= 60"
+    },
+    {
+      "name": "ModerateAverageDowntime",
+      "label": "Moderate average downtime (40h+)",
+      "weight": 10,
+      "expression": "machine.AvgDowntimeHours >= 40 && machine.AvgDowntimeHours < 60"
+    },
+    {
+      "name": "RepeatedHighDowntimeParts",
+      "label": "Multiple high-downtime part failures",
+      "weight": 20,
+      "expression": "machine.HighDowntimePartsCount >= 3"
+    },
+    {
+      "name": "SomeHighDowntimeParts",
+      "label": "At least one high-downtime part failure",
+      "weight": 10,
+      "expression": "machine.HighDowntimePartsCount >= 1 && machine.HighDowntimePartsCount < 3"
+    }
+  ]
+}
