@@ -29,6 +29,12 @@ public sealed class MachineRiskItem
 
     /// <summary>Most frequent problem reported in this machine's tickets.</summary>
     public string TopProblem { get; init; } = string.Empty;
+
+    /// <summary>Days remaining until the next scheduled maintenance; negative when overdue.</summary>
+    public int DaysUntilNextMaintenance => MaintenanceIntervalDays - DaysSinceLastMaintenance;
+
+    /// <summary>Calendar date the next maintenance is due, derived from LastMaintDate + MaintenanceIntervalDays.</summary>
+    public string NextMaintenanceDate => DateHelper.AddDays(LastMaintDate, MaintenanceIntervalDays);
 }
 
 public sealed class DashboardSummary
@@ -64,23 +70,26 @@ public static class DateHelper
 {
     private static readonly string[] Formats = ["M/d/yyyy", "MM/dd/yyyy", "yyyy-MM-dd"];
 
-    public static int CalculateDaysSince(string inputDate)
+    public static int CalculateDaysSince(string inputDate) =>
+        TryParse(inputDate, out var parsedDate) ? (DateTime.Today - parsedDate).Days : 0;
+
+    public static DateTime? ParseOrNull(string inputDate) =>
+        TryParse(inputDate, out var parsedDate) ? parsedDate : null;
+
+    /// <summary>Adds <paramref name="days"/> to <paramref name="inputDate"/>, returning it in the same "M/d/yyyy" style used throughout the mock data.</summary>
+    public static string AddDays(string inputDate, int days) =>
+        TryParse(inputDate, out var parsedDate) ? parsedDate.AddDays(days).ToString("M/d/yyyy", CultureInfo.InvariantCulture) : string.Empty;
+
+    private static bool TryParse(string inputDate, out DateTime parsedDate)
     {
-        if (string.IsNullOrWhiteSpace(inputDate))
+        if (!string.IsNullOrWhiteSpace(inputDate) &&
+            (DateTime.TryParseExact(inputDate, Formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate) ||
+             DateTime.TryParse(inputDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate)))
         {
-            return 0;
+            return true;
         }
 
-        if (DateTime.TryParseExact(inputDate, Formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
-        {
-            return (DateTime.Today - parsedDate).Days;
-        }
-
-        if (DateTime.TryParse(inputDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDate))
-        {
-            return (DateTime.Today - parsedDate).Days;
-        }
-
-        return 0;
+        parsedDate = default;
+        return false;
     }
 }

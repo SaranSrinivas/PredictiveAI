@@ -1,0 +1,155 @@
+@page "/data-used"
+@rendermode InteractiveServer
+@using PredictiveAnalysis.Models
+@using PredictiveAnalysis.Models.Entities
+@using PredictiveAnalysis.Services
+@inject DataRepository Repository
+
+<PageTitle>Data used</PageTitle>
+
+<header class="data-header">
+    <div class="data-badge">🗂️ Source data</div>
+    <h1 class="data-title">Raw data behind the dashboard</h1>
+    <p class="data-lead">
+       Four JSON files drive the predictive‑maintenance pipeline: machines, maintenance records, parts catalog, and breakdown tickets. Maintenance records and tickets are joined on ticket number so each part swap shows the machine and problem it was tied to. You can inspect the raw rows behind every score. The system works with any database, but a sample dataset is included to make prototyping easier.
+    </p>
+</header>
+
+<div class="data-tabs" role="tablist">
+    @foreach (var tab in tabs)
+    {
+        <button type="button" class="data-tab @(activeTab == tab.Key ? "active" : "")" @onclick="() => activeTab = tab.Key">
+            <span class="data-tab-icon">@tab.Icon</span>
+            <span>@tab.Label</span>
+            <span class="badge rounded-pill data-tab-count">@tab.Count</span>
+        </button>
+    }
+</div>
+
+<div class="data-panel">
+    @if (activeTab == "machines")
+    {
+        <div class="grid-scroll">
+            <table class="table table-hover table-sm align-middle data-grid mb-0">
+                <thead>
+                    <tr>
+                        <th class="num">Code</th>
+                        <th>Machine</th>
+                        <th>Cost center</th>
+                        <th>Manufacturer</th>
+                        <th>Commissioned</th>
+                        <th class="num">Interval (d)</th>
+                        <th>Last maint.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var machine in machines)
+                    {
+                        <tr>
+                            <td class="num">@machine.Code</td>
+                            <td class="fw-semibold">@machine.MachineName</td>
+                            <td>@machine.CostCenter</td>
+                            <td>@machine.MfrName</td>
+                            <td>@machine.CommDate</td>
+                            <td class="num">@machine.MaintSchInDays</td>
+                            <td>@machine.LastMaintDate</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (activeTab == "maintenance")
+    {
+        <div class="grid-scroll">
+            <table class="table table-hover table-sm align-middle data-grid mb-0">
+                <thead>
+                    <tr>
+                        <th class="num">Ticket no.</th>
+                        <th>Date</th>
+                        <th>Machine</th>
+                        <th>Problem</th>
+                        <th>Part</th>
+                        <th class="num">Pieces</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var group in groupedMaintenanceTickets)
+                    {
+                        for (var i = 0; i < group.Count; i++)
+                        {
+                            var record = group[i];
+                            <tr class="@(i == 0 ? "ticket-group-start" : "")">
+                                @if (i == 0)
+                                {
+                                    <td class="num" rowspan="@group.Count">@record.TicketNo</td>
+                                    <td rowspan="@group.Count">@record.Date</td>
+                                    <td class="fw-semibold" rowspan="@group.Count">@record.MachineName</td>
+                                    <td rowspan="@group.Count">@record.Problem</td>
+                                }
+                                <td>@record.PartName</td>
+                                <td class="num">@record.NoOfPcs</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (activeTab == "parts")
+    {
+        <div class="grid-scroll">
+            <table class="table table-hover table-sm align-middle data-grid mb-0">
+                <thead>
+                    <tr>
+                        <th class="num">Code</th>
+                        <th>Part</th>
+                        <th>Manufacturer</th>
+                        <th class="num">Lead time (d)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var part in parts)
+                    {
+                        <tr>
+                            <td class="num">@part.Code</td>
+                            <td class="fw-semibold">@part.PartName</td>
+                            <td>@part.MfrName</td>
+                            <td class="num">@part.LeadTimeDays</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Machine> machines = [];
+    private List<Part> parts = [];
+    private List<MaintenanceTicket> maintenanceTickets = [];
+    private List<List<MaintenanceTicket>> groupedMaintenanceTickets = [];
+    private List<TabInfo> tabs = [];
+    private string activeTab = "machines";
+
+    protected override void OnInitialized()
+    {
+        machines = Repository.LoadMachines();
+        parts = Repository.LoadParts();
+        maintenanceTickets = Repository.JoinMaintenanceWithTickets(Repository.LoadMaintRecords(), Repository.LoadTickets());
+        groupedMaintenanceTickets = maintenanceTickets
+            .GroupBy(record => record.TicketNo)
+            .OrderByDescending(group => DateHelper.ParseOrNull(group.First().Date) ?? DateTime.MinValue)
+            .Select(group => group.ToList())
+            .ToList();
+
+        tabs =
+        [
+            new TabInfo("machines", "🏭", "Machines", machines.Count),
+            new TabInfo("maintenance", "🔧", "Maintenance & tickets", maintenanceTickets.Count),
+            new TabInfo("parts", "⚙️", "Parts catalog", parts.Count)
+        ];
+    }
+
+    private sealed record TabInfo(string Key, string Icon, string Label, int Count);
+}

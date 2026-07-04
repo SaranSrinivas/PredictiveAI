@@ -71,6 +71,29 @@ else
         </div>
     </div>
 
+    <div class="schedule-panel mb-4">
+        <div class="schedule-header">
+            <span class="schedule-icon">🗓️</span>
+            <span class="schedule-title">Upcoming maintenance schedule</span>
+        </div>
+        <div class="schedule-list">
+            @foreach (var machine in summary.Machines.OrderBy(m => m.DaysUntilNextMaintenance).Take(10))
+            {
+                var overdue = machine.DaysUntilNextMaintenance < 0;
+                <div class="schedule-row">
+                    <div class="schedule-machine">
+                        <span class="fw-semibold">@machine.MachineName</span>
+                        <span class="schedule-cost">@machine.CostCenter</span>
+                    </div>
+                    <span class="schedule-date">Next due @machine.NextMaintenanceDate</span>
+                    <span class="badge @(overdue ? "bg-danger" : "bg-info text-dark")">
+                        @(overdue ? $"Overdue by {-machine.DaysUntilNextMaintenance}d" : $"Due in {machine.DaysUntilNextMaintenance}d")
+                    </span>
+                </div>
+            }
+        </div>
+    </div>
+
     <div class="grid-scroll">
         <table class="table table-hover table-sm align-middle risk-grid mb-0">
             <thead>

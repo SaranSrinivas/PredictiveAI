@@ -25,7 +25,6 @@
 }
 
 .dash-lead {
-    max-width: 760px;
     margin: 0;
     font-size: 0.98rem;
     line-height: 1.55;
@@ -83,6 +82,68 @@
     font-size: 0.9rem;
     line-height: 1.55;
     color: #2f3640;
+}
+
+/* Upcoming maintenance schedule panel */
+.schedule-panel {
+    background: #fff;
+    border: 1px solid #ebedf0;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    padding: 1rem 1.1rem;
+}
+
+.schedule-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.schedule-icon {
+    font-size: 1.1rem;
+}
+
+.schedule-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #495057;
+}
+
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.schedule-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.6rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+}
+
+.schedule-machine {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.schedule-cost {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.schedule-date {
+    flex: 0 0 auto;
+    font-size: 0.8rem;
+    color: #495057;
+    white-space: nowrap;
 }
 
 /* Stat cards */
