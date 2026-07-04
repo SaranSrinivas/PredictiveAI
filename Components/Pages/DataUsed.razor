@@ -4,6 +4,8 @@
 @using PredictiveAnalysis.Models.Entities
 @using PredictiveAnalysis.Services
 @inject DataRepository Repository
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <PageTitle>Data used</PageTitle>
 
@@ -29,6 +31,12 @@
 <div class="data-panel">
     @if (activeTab == "machines")
     {
+        <div class="grid-wrap">
+        <div class="grid-meta">
+            <span class="grid-meta-count">Showing all @machines.Count machines</span>
+            <span class="grid-meta-hint">Scroll for more <span aria-hidden="true">&#8964;</span></span>
+        </div>
+        <div class="grid-scroll-shell">
         <div class="grid-scroll">
             <table class="table table-hover table-sm align-middle data-grid mb-0">
                 <thead>
@@ -58,9 +66,18 @@
                 </tbody>
             </table>
         </div>
+        <div class="scroll-chevron" aria-hidden="true">&#8964;</div>
+        </div>
+        </div>
     }
     else if (activeTab == "maintenance")
     {
+        <div class="grid-wrap">
+        <div class="grid-meta">
+            <span class="grid-meta-count">Showing all @maintenanceTickets.Count maintenance records</span>
+            <span class="grid-meta-hint">Scroll for more <span aria-hidden="true">&#8964;</span></span>
+        </div>
+        <div class="grid-scroll-shell">
         <div class="grid-scroll">
             <table class="table table-hover table-sm align-middle data-grid mb-0">
                 <thead>
@@ -95,9 +112,18 @@
                 </tbody>
             </table>
         </div>
+        <div class="scroll-chevron" aria-hidden="true">&#8964;</div>
+        </div>
+        </div>
     }
     else if (activeTab == "parts")
     {
+        <div class="grid-wrap">
+        <div class="grid-meta">
+            <span class="grid-meta-count">Showing all @parts.Count parts</span>
+            <span class="grid-meta-hint">Scroll for more <span aria-hidden="true">&#8964;</span></span>
+        </div>
+        <div class="grid-scroll-shell">
         <div class="grid-scroll">
             <table class="table table-hover table-sm align-middle data-grid mb-0">
                 <thead>
@@ -121,6 +147,9 @@
                 </tbody>
             </table>
         </div>
+        <div class="scroll-chevron" aria-hidden="true">&#8964;</div>
+        </div>
+        </div>
     }
 </div>
 
@@ -131,6 +160,7 @@
     private List<List<MaintenanceTicket>> groupedMaintenanceTickets = [];
     private List<TabInfo> tabs = [];
     private string activeTab = "machines";
+    private IJSObjectReference? scrollHintModule;
 
     protected override void OnInitialized()
     {
@@ -149,6 +179,36 @@
             new TabInfo("maintenance", "🔧", "Maintenance & tickets", maintenanceTickets.Count),
             new TabInfo("parts", "⚙️", "Parts catalog", parts.Count)
         ];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Re-checked after every render: switching tabs swaps in a brand-new .grid-scroll
+        // element each time, and the JS side no-ops on containers it has already bound.
+        try
+        {
+            scrollHintModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/scroll-hint.js");
+            await scrollHintModule.InvokeVoidAsync("watch", ".grid-scroll");
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException)
+        {
+            // Circuit disconnected or the component is being torn down mid-call; ignore.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (scrollHintModule is not null)
+        {
+            try
+            {
+                await scrollHintModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone; nothing to clean up.
+            }
+        }
     }
 
     private sealed record TabInfo(string Key, string Icon, string Label, int Count);

@@ -3,7 +3,8 @@
 @using PredictiveAnalysis.Models
 @using PredictiveAnalysis.Services
 @inject PredictiveAnalysisService Service
-@implements IDisposable
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <PageTitle>Predictive Maintenance Dashboard</PageTitle>
 
@@ -94,6 +95,12 @@ else
         </div>
     </div>
 
+    <div class="grid-wrap">
+    <div class="grid-meta">
+        <span class="grid-meta-count">Showing all @summary.Machines.Count machines</span>
+        <span class="grid-meta-hint">Scroll for more <span aria-hidden="true">&#8964;</span></span>
+    </div>
+    <div class="grid-scroll-shell">
     <div class="grid-scroll">
         <table class="table table-hover table-sm align-middle risk-grid mb-0">
             <thead>
@@ -144,12 +151,16 @@ else
             </tbody>
         </table>
     </div>
+    <div class="scroll-chevron" aria-hidden="true">&#8964;</div>
+    </div>
+    </div>
 }
 
 @code {
     private DashboardSummary? summary;
     private bool isEnriching;
     private readonly CancellationTokenSource cts = new();
+    private IJSObjectReference? scrollHintModule;
 
     protected override async Task OnInitializedAsync()
     {
@@ -179,11 +190,38 @@ else
                 StateHasChanged();
             }
         }
+
+        // Re-checked after every render: the grid only exists once summary loads, and
+        // recommendation text streaming in in-place doesn't need a fresh call, but this is
+        // cheap and the JS side no-ops on containers it has already bound.
+        if (summary is not null)
+        {
+            try
+            {
+                scrollHintModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/scroll-hint.js");
+                await scrollHintModule.InvokeVoidAsync("watch", ".grid-scroll");
+            }
+            catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or TaskCanceledException)
+            {
+                // Circuit disconnected or the component is being torn down mid-call; ignore.
+            }
+        }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         cts.Cancel();
         cts.Dispose();
+        if (scrollHintModule is not null)
+        {
+            try
+            {
+                await scrollHintModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone; nothing to clean up.
+            }
+        }
     }
 }
